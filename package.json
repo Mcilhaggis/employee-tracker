@@ -1,0 +1,24 @@
+{
+  "name": "employee-tracker",
+  "version": "1.0.0",
+  "description": "This application allows non-developers to interact with a databse containing their employees information",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mcilhaggis/employee-tracker.git"
+  },
+  "author": "Rachael McIlhagga",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Mcilhaggis/employee-tracker/issues"
+  },
+  "homepage": "https://github.com/Mcilhaggis/employee-tracker#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^7.3.3",
+    "mysql": "^2.18.1"
+  }
+}
