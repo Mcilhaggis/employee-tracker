@@ -124,7 +124,7 @@ let addEmployeeResponseProcessing = (answer) => {
 
 
 const deleteEmployee = () => {
-    console.log("Deleting the employee..");
+    console.log("Firing employee..");
     connection.query('SELECT * FROM employee', (err, results) => {
         if (err) throw err;
         inquirer
@@ -136,8 +136,14 @@ const deleteEmployee = () => {
                     const employeeArr = [];
                     results.forEach(({first_name}) => {
                         employeeArr.push(first_name);
-                    });
+                    })
+
+                    // if (employeeArr.length === 0){
+                    //     console.log("You need employees before you can fire them");
+                    //     start();
+                    // } else {
                     return employeeArr;
+                    // }
                 },
                 message: 'Which employee would you like to remove?',
             },
