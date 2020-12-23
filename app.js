@@ -48,7 +48,7 @@ const start = () => {
                 addEmployees();
                 break; 
             case 'Remove employee':
-                //function action to set of new questions;
+                deleteEmployee();
                 break; 
             case 'Update employee role':
                 //function action to set of new questions;
@@ -75,26 +75,26 @@ const start = () => {
 const addEmployees = () => {
     console.log("Creating new employee..");
     //Ask for employee first name
-    let q1 = {
+    let a1 = {
         type: 'input',
         name:'firstName',
         message: 'What is the employees first name?'
     };
     //Ask for employee last name
-    let q2 = {
+    let a2 = {
         type: 'input',
         name: 'lastName',
         message: 'What is the employees last name?'
     };
     //Ask for employee role
-    let q3 = {
+    let a3 = {
         type: 'list',
         name: 'role',
         message: 'What is the employees role?',
         choices: ['Sales','Finance','Marketing','Engineering']
     };
     //Ask for employee manager
-    let q4 = {
+    let a4 = {
         type: 'list',
         name: 'manager',
         message: 'Who do they report to?',
@@ -118,8 +118,56 @@ let addEmployeeResponseProcessing = (answer) => {
             }
         );
     };
-    inquirer.prompt([q1,q2,q3,q4]).then(addEmployeeResponseProcessing);
+    inquirer.prompt([a1,a2,a3,a4]).then(addEmployeeResponseProcessing);
 }
+
+
+
+const deleteEmployee = () => {
+    console.log("Deleting the employee..");
+    connection.query('SELECT * FROM employee', (err, results) => {
+        if (err) throw err;
+        inquirer
+        .prompt([
+            {
+                type: 'list',
+                name: 'employee',
+                choices() {
+                    const employeeArr = [];
+                    results.forEach(({first_name}) => {
+                        employeeArr.push(first_name);
+                    });
+                    return employeeArr;
+                },
+                message: 'Which employee would you like to remove?',
+            },
+        ])
+        .then((answer) => {
+            //store the chosen employee name
+            let chosenEmployee;
+            //if employee exists in DB, store
+            results.forEach((name) => {
+                if(name.first_name === answer.employee) {
+                    chosenEmployee = name.id;
+                    console.log(chosenEmployee);
+                }
+            })
+            connection.query(
+                'DELETE FROM employee WHERE id = ?', chosenEmployee, (err, data) => {
+                    if (err) throw err;
+                    console.log(data.affectedRows + " record updated");
+                    }
+            )
+        })
+    });
+}
+
+
+
+
+
+
+
 
 // Instantiate the connection
 let connectionCallBack = (err) => {
