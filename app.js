@@ -24,6 +24,8 @@ const start = () => {
                 'View all employees by department', 
                 'View all employees by manager',
                 'Add employee',
+                'Add department',
+                'Add role',
                 'Remove employee',
                 'Update employee role',
                 'Update employee manager',
@@ -38,15 +40,24 @@ const start = () => {
             case 'View all employees':
                 viewEmployees();
                 break;
-            case 'View all employees by department':
+            case 'View employees by department':
                 viewByDept();
                 break;
-            case 'View all employees by manager':
+            case 'View employees by manager':
+                //function action to set of new questions;
+                break; 
+            case 'View department spendings':
                 //function action to set of new questions;
                 break; 
             case 'Add employee':
                 addEmployees();
                 break; 
+            case 'Add department':
+                addDepartments();
+                break;     
+            case 'Add role':
+                addRoles();
+                break;     
             case 'Remove employee':
                 deleteEmployee();
                 break; 
@@ -55,9 +66,6 @@ const start = () => {
                 break; 
             case 'Update employee manager':
                 updateManager();
-                break; 
-            case 'View all roles':
-                //function action to set of new questions;
                 break;     
             case 'EXIT':
                 connection.end();
@@ -74,7 +82,17 @@ const start = () => {
 
 const addEmployees = () => {
     connection.query('SELECT * FROM role', (err, res) => {
+        if (err) throw err;
+        connection.query('SELECT CONCAT(`first_name`,', ' ', ', `last_name`) AS manager FROM `employee`', (err, result) => {
+            if (err) throw err;
+    
+        // console.log(managers);)
     console.log("Creating new employee..");
+
+    const roleArr = [];
+    //how to get two collections of data - i need the employee names from the employee table 
+    const managerArr = [];
+
     //Ask for employee first name
     let a1 = {
         type: 'input',
@@ -93,7 +111,6 @@ const addEmployees = () => {
         name: 'role',
         message: 'What is the employees role?',
         choices() {
-                const roleArr = [];
                 res.forEach(({title}) => {
                     roleArr.push(title);
                 })
@@ -107,16 +124,24 @@ const addEmployees = () => {
         name: 'manager',
         message: 'Who do they report to?',
         //Needs to be updated with list of actual employees
-        choices: ['Jen','Rachel','Tania']
+        // choices: ['Jen','Rachel','Tania']
+        choices() {
+            result.forEach(({manager}) => {
+                managerArr.push(manager);
+            })
+            return managerArr;
+        }
     };
 
 let addEmployeeResponseProcessing = (answer) => {
+    console.log(answer.role)
+
         connection.query(
             'INSERT INTO employee SET ?',
             {
                 first_name: answer.firstName,
                 last_name: answer.lastName,
-                role_id: a3.choices.indexOf(answer.role),
+                role_id: roleArr.indexOf(answer.role),
                 manager_id: a4.choices.indexOf(answer.manager) + 1,
             },
             (err) => {
@@ -127,7 +152,79 @@ let addEmployeeResponseProcessing = (answer) => {
         );
     };
     inquirer.prompt([a1,a2,a3,a4]).then(addEmployeeResponseProcessing);
+});
     })
+}
+
+const addDepartments = () => {
+
+        let ad1 = {
+            type: 'input',
+            name: 'department',
+            message: 'What is the new department?'
+        }
+
+    let addDepartmentResponseProcessing = (answer) => {    
+            connection.query(
+                'INSERT INTO department SET ?',
+                {
+                    dept_name: answer.department,
+                },
+                (err) => {
+                    if (err) throw err;
+                    console.log("Department added successfuly!");
+                    start();
+                }
+            );
+        };
+        inquirer.prompt([ad1]).then(addDepartmentResponseProcessing);
+}
+
+const addRoles = () => {
+    const deptArr = [];
+    connection.query('SELECT dept_name FROM department', (err,res) => {
+
+    let ar1 = {
+        type: 'input',
+        name: 'roles',
+        message: 'What is the new role?'
+    }
+    let ar2 = {
+        type: 'list',
+        name: 'dept',
+        choices() {
+                if (err) throw err;
+                res.forEach(({dept_name}) => {
+                    deptArr.push(dept_name);
+                })
+            return deptArr;
+        },
+        message: 'Which department is this role in?'
+    }
+
+    let ar3 = {
+        type: 'input',
+        name: 'salary',
+        message: 'What is the salary for this position?'
+    }
+
+let addRoleResponseProcessing = (answer) => {    
+        connection.query(
+            'INSERT INTO role SET ?',
+            {
+                title: answer.roles,
+                department_id: deptArr.indexOf(answer.dept),
+                salary: answer.salary
+            },
+            (err) => {
+                if (err) throw err;
+                console.log("Role added successfuly!");
+                start();
+            }
+        );
+    };
+    inquirer.prompt([ar1, ar2, ar3]).then(addRoleResponseProcessing);
+  })
 }
 
 const viewEmployees = () => {
@@ -183,7 +280,6 @@ const viewByManager = () => {
 const viewDeptSpending = () => {
 
 }
-
 
 const updateRole = () => {
     console.log("Updating emplyee role...");
@@ -245,7 +341,6 @@ const updateRole = () => {
         })            
     };
 
-
 const updateManager = () => {
     console.log("Updating emplyee manager...");
     connection.query('SELECT * FROM employee', (err, results) => {
@@ -305,7 +400,6 @@ const updateManager = () => {
         })            
     };
 
-
 const deleteEmployee = () => {
     console.log("Firing employee..");
     connection.query('SELECT * FROM employee', (err, results) => {
@@ -350,10 +444,6 @@ const deleteEmployee = () => {
         })
     });
 }
-
-
-
-
 
 
 
