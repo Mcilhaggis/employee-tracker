@@ -1,6 +1,7 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql");
 const table = require("console.table");
+const promise = require("promise-mysql");
 
 //Create connection to mySQL database
 const connectionInformation = {
@@ -21,7 +22,7 @@ const start = () => {
                 message: 'What would you like to do?',
                 choices: [
                 'View all employees', 
-                'View all employees by department', 
+                'View employees by department', 
                 'View all employees by manager',
                 'Add employee',
                 'Add department',
@@ -38,9 +39,11 @@ const start = () => {
     let firstResponse = (answer) => {
         switch (answer.action) {
             case 'View all employees':
+                //manager is showing up as themselves
                 viewEmployees();
                 break;
             case 'View employees by department':
+                //displaying manager as themselves
                 viewByDept();
                 break;
             case 'View employees by manager':
@@ -62,6 +65,7 @@ const start = () => {
                 deleteEmployee();
                 break; 
             case 'Update employee role':
+                //is currently updating the dept not role
                 updateRole();                
                 break; 
             case 'Update employee manager':
@@ -83,8 +87,6 @@ const start = () => {
 const addEmployees = () => {
     connection.query('SELECT * FROM role', (err, res) => {
         if (err) throw err;
-        connection.query('SELECT CONCAT(`first_name`,', ' ', ', `last_name`) AS manager FROM `employee`', (err, result) => {
-            if (err) throw err;
     
         // console.log(managers);)
     console.log("Creating new employee..");
@@ -124,13 +126,13 @@ const addEmployees = () => {
         name: 'manager',
         message: 'Who do they report to?',
         //Needs to be updated with list of actual employees
-        // choices: ['Jen','Rachel','Tania']
-        choices() {
-            result.forEach(({manager}) => {
-                managerArr.push(manager);
-            })
-            return managerArr;
-        }
+        choices: ['Jen','Rachel','Tania']
+        // choices() {
+        //     result.forEach(({manager}) => {
+        //         managerArr.push(manager);
+        //     })
+        //     return managerArr;
+        // }
     };
 
 let addEmployeeResponseProcessing = (answer) => {
@@ -153,7 +155,6 @@ let addEmployeeResponseProcessing = (answer) => {
     };
     inquirer.prompt([a1,a2,a3,a4]).then(addEmployeeResponseProcessing);
 });
-    })
 }
 
 const addDepartments = () => {
@@ -230,9 +231,9 @@ let addRoleResponseProcessing = (answer) => {
 const viewEmployees = () => {
     console.log("Fetching employees...");
 
-    let query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.dept_name AS department, role.salary, concat(m.first_name, ' ' ,  m.last_name) AS manager FROM employee LEFT JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON employee.role_id = role.id INNER JOIN department ON role.department_id = department.id ORDER BY ID ASC";
+    //this is displaying themselves as their own manager
+    let query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.dept_name AS Department, role.salary, CONCAT(employee.first_name, ' ' ,  employee.last_name) AS manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
     
-    //DOESNT SHOW ANY MANAGERS???
     connection.query(query, (err, results) => {
         if (err) throw err;
         console.table(results);
@@ -243,33 +244,38 @@ const viewEmployees = () => {
 
 const viewByDept = () => {
     console.log("Fetching departments...");
-    
-    connection.query('SELECT dept_name FROM department', (err, results) => {
-        if (err) throw err;
-        let vbd1 = {
-            type: 'list',
-            name: 'department',
-            choices() {
-                const deptArr = [];
-                results.forEach(({dept_name}) => {
-                    deptArr.push(dept_name);
-                })
-                return deptArr;
-            },
-            message: 'Which department do you want to view?'
-        }
-        //Display employees in chosen department
-        let displayDeptChosen = () => {
-            let query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, concat(m.first_name, ' ' ,  m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.dept_name = '${results.department}' ORDER BY ID ASC`;
+    let deptChoiceArray = [];
 
-            connection.query(query, (err, res) => {
-                if (err) throw err;
-                console.table(res);
-                start();
+    //Create connection with promise
+    promise.createConnection(connectionInformation).then((conn) => {
+
+        //Query the department names
+        return conn.query('SELECT dept_name FROM department');
+    }).then(function(results){
+        //Place dept names into an array
+            deptChoiceArray = results.map(choice => choice.dept_name);
+        }).then(() => {
+            inquirer.prompt({
+                type: 'list',
+                name: 'department',
+                choices: deptChoiceArray,
+                message: 'Which department do you want to view?'
+            }).then((answer) => {
+                const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, concat(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = e.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.dept_name = '${answer.department}' ORDER BY ID ASC`;
+
+                connection.query(query, (err, results) => {
+                    if (err) throw err;
+
+                    //display results in a console table
+                    console.table(results);
+
+                    //Restart main menu
+                    start();
+                })
             })
-        }
-        inquirer.prompt([vbd1]).then(displayDeptChosen);
-    })   
+        })
+    
+   
 };
 
 
