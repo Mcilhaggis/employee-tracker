@@ -53,6 +53,7 @@ const start = () => {
                 //function action to set of new questions;
                 break; 
             case 'Add employee':
+                //is not adding the role or maanger properly 
                 addEmployees();
                 break; 
             case 'Add department':
@@ -281,7 +282,7 @@ const viewByDept = () => {
    
 };
 
-
+//not complete - needs elements changed 
 const viewByManager = () => {
     console.log("Fetching departments...");
     let deptChoiceArray = [];
@@ -394,7 +395,7 @@ const viewEmployees = () => {
     console.log("Fetching employees...");
 
     //this is displaying themselves as their own manager
-    let query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.dept_name AS Department, role.salary, CONCAT(employee.first_name, ' ' ,  employee.last_name) AS manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
+    let query = "SELECT employee.id AS ID, employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS 'Title', department.dept_name AS Department, role.salary AS 'Salary', CONCAT(employee.first_name, ' ' ,  employee.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
     
     connection.query(query, (err, results) => {
         if (err) throw err;
@@ -542,63 +543,78 @@ const updateRole = () => {
     };
 
 const updateManager = () => {
-    console.log("Updating emplyee manager...");
-    connection.query('SELECT * FROM employee', (err, results) => {
-        if (err) throw err;
-            let um1 = {
-                type: 'list',
-                name: 'employee',
-                choices() {
-                    const employeeArr = [];
-                    results.forEach(({first_name}) => {
-                        employeeArr.push(first_name);
-                    })
-                    //add you dont have any employees message if array is empty
-                    return employeeArr;
+    console.log("Fetching employees...");
+    //Global variables for choices arrays
+    let employeeArr = [];
+
+    //Create connection with promise
+    promise.createConnection(connectionInformation).then((conn) => {
+
+        //Query the department names
+            return conn.query("SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name) AS Employee FROM employee ORDER BY Employee");
+
+    }).then((employees) => {
+        //Place role names into an array
+        for (i = 0; i < employees.length; i++){
+            employeeArr.push(employees[i].Employee)
+        }
+        console.log(employeeArr)
+            //if there are no managers:
+            // employeeArr.unshift('--');
+
+
+            inquirer.prompt([
+                //Ask for employee first name
+                {
+                    type: 'list',
+                    name:'name',
+                    message: 'Which employee would you like to edit?',
+                    choices: employeeArr
                 },
-                message: 'Which employee would you like to update?',
-            };
-            let um2 = {
-                type: 'list',	
-                name: 'manager',
-                //Are these roles preset values?
-                choices: ['Jen','Rachel','Tania'],
-                message: 'Who is the employees new manager?'
-            }
-            let updateEmployeeManagerProcessing = (answer) => {
-                let chosenManagerEmployee;
-                //store the new role title 
-                let newManager = answer.manager;
-                //store new role title index
-                let newManagerIndex = um2.choices.indexOf(newManager) + 1;
-                //if employee exists in DB, store
-                results.forEach((name) => {
-                    if(name.first_name === answer.employee) {
-                        chosenManagerEmployee = name.id;
-                        console.log("the employee id chosen is:" + chosenManagerEmployee);
+
+                //Ask for employee manager
+                {
+                    type: 'list',
+                    name: 'manager',
+                    message: 'Who is their new manager?',
+                    choices: employeeArr
+                }
+
+            ]).then((answer) => {
+                console.log(answer.manager);
+                console.log(answer.name);
+                
+                let employeeID;
+                let managerID;
+                
+                //Get selected employee ID
+                for(i=0; i<employees.length; i++) {
+                    if(answer.name == employees[i].Employee){
+                        employeeID = employees[i].id;
+                        console.log("employee number is: " + [i])
+
                     }
+                }
+                //Get manager ID
+                for(i=0; i<employees.length; i++) {
+                    if(answer.manager == employees[i].Employee){
+                        managerID = employees[i].id;
+                        console.log("manager id is: " +[i])
+                    }
+                }
+                console.log(employeeID)
+                console.log(managerID)
+                //update the employee with the manager ID
+                connection.query(`UPDATE employee SET manager_id = ${managerID} WHERE id = ${employeeID}`, (err, res) => {
+                    if(err) throw err;
+                    console.log(`\n ${answer.name} MANAGER UPDATED TO ${answer.manager}...\n`);
+
+                    start();
                 })
-                connection.query(
-                    'UPDATE employee SET ? WHERE ?',
-                    [
-                        {
-                            manager_id: newManagerIndex,
-                            },
-                        {
-                            id: chosenManagerEmployee,
-                        },
-                    ],
-                    //If the employee role is the same make the user choose again
-                    (err, data) => {
-                        if (err) throw err;
-                        console.log(data.affectedRows + " record updated");
-                        start();
-                        }
-                )
-            };
-            inquirer.prompt([um1,um2]).then(updateEmployeeManagerProcessing);
-        })            
-    };
+            })
+        })
+    }
+      
 
 const deleteEmployee = () => {
     console.log("Firing employee..");
@@ -632,13 +648,12 @@ const deleteEmployee = () => {
             results.forEach((name) => {
                 if(name.first_name === answer.employee) {
                     chosenEmployee = name.id;
-                    console.log(chosenEmployee);
                 }
             })
             connection.query(
                 'DELETE FROM employee WHERE id = ?', chosenEmployee, (err, data) => {
                     if (err) throw err;
-                    console.log(data.affectedRows + " record updated");
+                    start();
                     }
             )
         })
