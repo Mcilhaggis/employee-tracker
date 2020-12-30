@@ -395,12 +395,8 @@ const viewEmployees = () => {
     console.log("Fetching employees...");
 
     //this is displaying themselves as their own manager
-    let query = 
-    // 'SELECT employee.id, employee.first_name, employee.last_name, title, name AS department, salary, CONCAT(m.first_name," ",m.last_name) AS manager FROM employee LEFT JOIN roles ON employee.roles_id = roles.id LEFT JOIN department ON roles.department_id = department.id LEFT JOIN employee m ON m.id = employee.manager_id'
-    
+    let query =  
     "SELECT employee.id AS ID, employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS 'Title', department.dept_name AS Department, role.salary AS 'Salary', CONCAT(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
-
-    
     
     connection.query(query, (err, results) => {
         if (err) throw err;
@@ -429,7 +425,9 @@ const viewByDept = () => {
                 choices: deptChoiceArray,
                 message: 'Which department do you want to view?'
             }).then((answer) => {
-                const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, concat(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = e.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.dept_name = '${answer.department}' ORDER BY ID ASC`;
+                const query = `SELECT employee.id AS ID, employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, CONCAT(e.first_name, ' ' , e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id WHERE department.dept_name = '${answer.department}' ORDER BY ID ASC`;
+
+                    // CONCAT(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
 
                 connection.query(query, (err, results) => {
                     if (err) throw err;
@@ -448,16 +446,16 @@ const viewByDept = () => {
 
 const viewByManager = () => {
     console.log("Fetching departments...");
-    let deptChoiceArray = [];
+    let managerChoiceArray = [];
 
     //Create connection with promise
     promise.createConnection(connectionInformation).then((conn) => {
 
         //Query the department names
-        return conn.query('SELECT d FROM department');
+        return conn.query('SELECT manager_id FROM employee');
     }).then(function(results){
         //Place dept names into an array
-            deptChoiceArray = results.map(choice => choice.dept_name);
+            managerChoiceArray = results.map(choice => choice.manager_id);
         }).then(() => {
             inquirer.prompt({
                 type: 'list',
