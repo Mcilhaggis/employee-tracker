@@ -39,11 +39,9 @@ const start = () => {
     let firstResponse = (answer) => {
         switch (answer.action) {
             case 'View all employees':
-                //manager is showing up as themselves
-                viewEmployees();
+            viewEmployees();
                 break;
             case 'View employees by department':
-                //displaying manager as themselves
                 viewByDept();
                 break;
             case 'View employees by manager':
@@ -53,7 +51,7 @@ const start = () => {
                 //function action to set of new questions;
                 break; 
             case 'Add employee':
-                //is not adding the role or maanger properly 
+                //is not adding the manager at all 
                 addEmployees();
                 break; 
             case 'Add department':
@@ -90,6 +88,10 @@ const addEmployees = () => {
     //Global variables for choices arrays
     let rolesArr = [];
     let managersArr = [];
+    let managerIDArr = [];
+    console.log(rolesArr);
+    console.log(managersArr);
+    console.log(managerIDArr);
 
     //Create connection with promise
     promise.createConnection(connectionInformation).then((conn) => {
@@ -109,11 +111,18 @@ const addEmployees = () => {
         for (i=0; i< managers.length; i++){
             managersArr.push(managers[i].Employee)
         }
+        //Place manager ID into an array
+        for (i = 0; i < managers.length; i++){
+            managerIDArr.push(managers[i].id)
+        }
+
         return Promise.all([roles, managers]);
         }).then(([roles, managers]) => {
             //if there are no managers:
             managersArr.unshift('--');
-
+            console.log(rolesArr);
+            console.log(managersArr);
+            console.log(managerIDArr);
 
             inquirer.prompt([
                 //Ask for employee first name
@@ -144,13 +153,21 @@ const addEmployees = () => {
                 }
 
             ]).then((answer) => {
+
+                let managerNameIndex = managersArr.indexOf(answer.manager) - 1;
+                console.log("manager name index: " + managerNameIndex);
+
+                let managerIDIndex = managerIDArr[managerNameIndex];
+                console.log("manager id index: " + managerIDIndex);
+
                 connection.query(
+
                     'INSERT INTO employee SET ?',
                     {
                         first_name: answer.firstName,
                         last_name: answer.lastName,
-                        role_id: rolesArr.indexOf(answer.role),
-                        manager_id: managersArr.indexOf(answer.manager)
+                        role_id: rolesArr.indexOf(answer.role) + 1,
+                        manager_id: managerIDIndex 
                     },
                     (err) => {
                         if (err) throw err;
