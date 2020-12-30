@@ -395,7 +395,12 @@ const viewEmployees = () => {
     console.log("Fetching employees...");
 
     //this is displaying themselves as their own manager
-    let query = "SELECT employee.id AS ID, employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS 'Title', department.dept_name AS Department, role.salary AS 'Salary', CONCAT(employee.first_name, ' ' ,  employee.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
+    let query = 
+    // 'SELECT employee.id, employee.first_name, employee.last_name, title, name AS department, salary, CONCAT(m.first_name," ",m.last_name) AS manager FROM employee LEFT JOIN roles ON employee.roles_id = roles.id LEFT JOIN department ON roles.department_id = department.id LEFT JOIN employee m ON m.id = employee.manager_id'
+    
+    "SELECT employee.id AS ID, employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS 'Title', department.dept_name AS Department, role.salary AS 'Salary', CONCAT(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
+
+    
     
     connection.query(query, (err, results) => {
         if (err) throw err;
@@ -558,10 +563,8 @@ const updateManager = () => {
         for (i = 0; i < employees.length; i++){
             employeeArr.push(employees[i].Employee)
         }
-        console.log(employeeArr)
-            //if there are no managers:
-            // employeeArr.unshift('--');
-
+            // if there is to be no manager:
+            employeeArr.unshift('--');
 
             inquirer.prompt([
                 //Ask for employee first name
@@ -591,19 +594,14 @@ const updateManager = () => {
                 for(i=0; i<employees.length; i++) {
                     if(answer.name == employees[i].Employee){
                         employeeID = employees[i].id;
-                        console.log("employee number is: " + [i])
-
                     }
                 }
                 //Get manager ID
                 for(i=0; i<employees.length; i++) {
                     if(answer.manager == employees[i].Employee){
                         managerID = employees[i].id;
-                        console.log("manager id is: " +[i])
                     }
                 }
-                console.log(employeeID)
-                console.log(managerID)
                 //update the employee with the manager ID
                 connection.query(`UPDATE employee SET manager_id = ${managerID} WHERE id = ${employeeID}`, (err, res) => {
                     if(err) throw err;
