@@ -427,8 +427,6 @@ const viewByDept = () => {
             }).then((answer) => {
                 const query = `SELECT employee.id AS ID, employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, CONCAT(e.first_name, ' ' , e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id WHERE department.dept_name = '${answer.department}' ORDER BY ID ASC`;
 
-                    // CONCAT(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
-
                 connection.query(query, (err, results) => {
                     if (err) throw err;
 
@@ -445,39 +443,56 @@ const viewByDept = () => {
 };
 
 const viewByManager = () => {
-    console.log("Fetching departments...");
-    let managerChoiceArray = [];
+    console.log("Fetching employees...");
+    //Global variables for choices arrays
+    let managerNameArr = [];
+    let managerIDArr = [];
 
     //Create connection with promise
     promise.createConnection(connectionInformation).then((conn) => {
 
         //Query the department names
-        return conn.query('SELECT manager_id FROM employee');
-    }).then(function(results){
-        //Place dept names into an array
-            managerChoiceArray = results.map(choice => choice.manager_id);
-        }).then(() => {
-            inquirer.prompt({
-                type: 'list',
-                name: 'department',
-                choices: deptChoiceArray,
-                message: 'Which department do you want to view?'
-            }).then((answer) => {
-                const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, concat(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = e.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.dept_name = '${answer.department}' ORDER BY ID ASC`;
+            return conn.query("SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name, '') AS Employee FROM employee ORDER BY Employee");
 
-                connection.query(query, (err, results) => {
-                    if (err) throw err;
+    }).then((managers) => {
+        //Place manager names into an array
+        for (i = 0; i < managers.length; i++){
+            managerNameArr.push( managers[i].Employee)
+        }
+        
+        //Place manager ID into an array
+        for (i = 0; i < managers.length; i++){
+            managerIDArr.push(managers[i].id)
+        }
 
-                    //display results in a console table
-                    console.table(results);
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'manager',
+                    choices: managerNameArr,
+                    message: 'Which managers employees do you want to view?'    
+                }
+            ]).then((answer) => {
 
-                    //Restart main menu
-                    start();
+                let managerNameID = managerNameArr.indexOf(answer.manager);
+                let managerID = managerIDArr[managerNameID];
+
+                    const query = `SELECT employee.id AS 'ID', employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS 'Title', department.dept_name AS Department, role.salary AS 'Salary', CONCAT(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id WHERE employee.manager_id = '${managerID}' ORDER BY ID ASC`;
+
+
+                    connection.query(query, (err, results) => {
+                        if (err) throw err;
+
+                        //display results in a console table
+                        console.table(results);
+
+                        //Restart main menu
+                        start();
                 })
             })
         })
     
-   
+    
 };
 
 
