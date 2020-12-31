@@ -51,7 +51,6 @@ const start = () => {
                 //function action to set of new questions;
                 break; 
             case 'Add employee':
-                //is not adding the manager at all 
                 addEmployees();
                 break; 
             case 'Add department':
@@ -336,7 +335,6 @@ const viewByManager = () => {
    
 };
 }
-
 const addDepartments = () => {
 
     let ad1 = {
@@ -518,64 +516,86 @@ const viewDeptSpending = () => {
 }
 
 const updateRole = () => {
-    console.log("Updating emplyee role...");
-    connection.query('SELECT * FROM employee', (err, results) => {
-        if (err) throw err;
-            let ur1 = {
-                type: 'list',
-                name: 'employee',
-                choices() {
-                    const employeeArr = [];
-                    results.forEach(({first_name}) => {
-                        employeeArr.push(first_name);
-                    })
-                    //you dont have any employees message if array is empty
-                    return employeeArr;
+
+    console.log("Fetching employees...");
+    //Global variables for choices arrays
+    let employeeArr = [];
+    let roleArr = [];
+
+    //Create connection with promise
+    promise.createConnection(connectionInformation).then((conn) => {
+
+        //Query the employee names and role options
+        return Promise.all([
+            conn.query('SELECT id, title FROM role'),
+            conn.query("SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name) AS Employee FROM employee ORDER BY Employee")
+            ]);
+
+            
+    }).then(([roles, employees]) => {
+        console.log(employees);
+         console.log(roles)
+        
+        //Place employee names into an array
+        for (i = 0; i < employees.length; i++){
+            employeeArr.push(employees[i].Employee)
+        }
+        
+        //Place roles into an array
+        for (i = 0; i < roles.length; i++){
+            roleArr.push(roles[i].title)
+        }
+
+        return Promise.all([employees, roles]);
+        }).then(([employees, roles]) => {
+;
+
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'employee',
+                    choices: employeeArr,
+                    message: 'Which employee do you want to change the role of?'    
                 },
-                message: 'Which employee would you like to update?',
-            };
-    // connection.query('SELECT * FROM department - add this for flexible roles taken from db 
-            let ur2 = {
-                type: 'list',	
-                name: 'role',
-                //Are these roles preset values?
-                choices: ['Marketing','Sales','Finance','Engineering'],
-                message: 'What is the employees new role?'
-            }
-            let updateEmployeeRoleProcessing = (answer) => {
-                let chosenRoleEmployee;
-                //store the new role title 
-                let newRole = answer.role;
-                //store new role title index
-                let newRoleIndex = ur2.choices.indexOf(newRole) + 1;
-                //if employee exists in DB, store
-                results.forEach((name) => {
-                    if(name.first_name === answer.employee) {
-                        chosenRoleEmployee = name.id;
-                        console.log("the employee id chosen is:" + chosenRoleEmployee);
+                {
+                    type: 'list',
+                    name: 'role',
+                    choices: roleArr,
+                    message: 'What is their new role?'    
+                }
+            ]).then((answer) => {
+                
+                let employeeID;
+                let roleID;
+                
+                
+                //Get selected employee ID
+                for(i=0; i<employees.length; i++) {
+                    if(answer.employee == employees[i].Employee){
+                        employeeID = employees[i].id;
                     }
-                })
-                connection.query(
-                    'UPDATE employee SET ? WHERE ?',
-                    [
-                        {
-                            role_id: newRoleIndex,
-                            },
-                        {
-                            id: chosenRoleEmployee,
-                        },
-                    ],
-                    //If the employee role is the same make the user choose again
-                     (err, data) => {
-                        if (err) throw err;
-                        console.log(data.affectedRows + " record updated");
+                }
+
+                //Get role ID
+                for(i=0; i<roles.length; i++) {
+                    if(answer.role == roles[i].title){
+                        roleID = roles[i].id;
+                    }
+                }
+
+                // update the employee with the manager ID
+                connection.query(`UPDATE employee SET role_id = ${roleID} WHERE id = ${employeeID}`, (err, res) => {
+                    if(err) throw err;
+                    console.log(`\n ${answer.name} ROLE UPDATED TO ${answer.role}...\n`);
+                
+                
+                        // Restart main menu
                         start();
-                        }
-                )
-            };
-            inquirer.prompt([ur1,ur2]).then(updateEmployeeRoleProcessing);
-        })            
-    };
+                })
+            })
+        })  
+};
+
 
 const updateManager = () => {
     console.log("Fetching employees...");
