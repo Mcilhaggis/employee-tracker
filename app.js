@@ -24,10 +24,12 @@ const start = () => {
                 'View all employees', 
                 'View employees by department', 
                 'View employees by manager',
+                'View department spending',
                 'Add employee',
                 'Add department',
                 'Add role',
                 'Remove employee',
+                'Remove role',
                 'Update employee role',
                 'Update employee manager',
                 'View all roles',
@@ -47,8 +49,8 @@ const start = () => {
             case 'View employees by manager':
                 viewByManager();
                 break; 
-            case 'View department spendings':
-                //function action to set of new questions;
+            case 'View department spending':
+                viewDeptSpending();
                 break; 
             case 'Add employee':
                 addEmployees();
@@ -62,8 +64,10 @@ const start = () => {
             case 'Remove employee':
                 deleteEmployee();
                 break; 
+            case 'Remove role':
+                deleteRole();
+                break; 
             case 'Update employee role':
-                //is currently updating the dept not role
                 updateRole();                
                 break; 
             case 'Update employee manager':
@@ -298,7 +302,6 @@ const viewByDept = () => {
    
 };
 
-//not complete - needs elements changed 
 const viewByManager = () => {
     console.log("Fetching departments...");
     let deptChoiceArray = [];
@@ -453,8 +456,6 @@ const viewByDept = () => {
                 })
             })
         })
-    
-   
 };
 
 const viewByManager = () => {
@@ -488,7 +489,6 @@ const viewByManager = () => {
                     message: 'Which managers employees do you want to view?'    
                 }
             ]).then((answer) => {
-
                 let managerNameID = managerNameArr.indexOf(answer.manager);
                 let managerID = managerIDArr[managerNameID];
 
@@ -512,8 +512,73 @@ const viewByManager = () => {
 
 
 const viewDeptSpending = () => {
+    console.log("Fetching departments...");
+    let deptChoiceArray = [];
+    let deptIDArray = [];
+    let rolesArr = [];
+    let roleDeptIDArr = [];
 
-}
+    //Create connection with promise
+    promise.createConnection(connectionInformation).then((conn) => {
+
+        //Query the department names
+        return Promise.all([
+            conn.query('SELECT id, dept_name FROM department AS Department'),
+            conn.query("SELECT role.id, role.title, role.salary, role.department_id FROM role")
+            ]);
+
+        }).then(([depts, roles]) => {
+        // console.log(depts)
+        // console.log(roles)
+
+        //Place names into an array
+        for (i = 0; i < depts.length; i++){
+            deptChoiceArray.push(depts[i].dept_name)
+        }
+        
+        //Place dept id into an array
+        for (i = 0; i < depts.length; i++){
+            deptIDArray.push(depts[i].id)
+        }
+        //Place role title into an array
+        for (i = 0; i < roles.length; i++){
+            rolesArr.push(roles[i].title)
+        }
+        //Place role id into an array
+        for (i = 0; i < roles.length; i++){
+            roleDeptIDArr.push(roles[i].department_id)
+        }
+
+        console.log(deptChoiceArray)
+        console.log(deptIDArray)
+        console.log(rolesArr)
+        console.log(roleDeptIDArr)
+
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'department',
+                    choices: deptChoiceArray,
+                    message: 'Which department do you want to view?'
+                }
+        ]).then((answer) => {
+
+                console.log(answer)
+                // const query = `SELECT employee.id AS ID, employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, CONCAT(e.first_name, ' ' , e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id WHERE department.dept_name = '${answer.department}' ORDER BY ID ASC`;
+
+                // connection.query(query, (err, results) => {
+                //     if (err) throw err;
+
+                //     //display results in a console table
+                //     console.table(results);
+
+                    //Restart main menu
+                    start();
+                })
+            })
+        // }) 
+};
+
 
 const updateRole = () => {
 
@@ -708,7 +773,48 @@ const deleteEmployee = () => {
     });
 }
 
+const deleteRole = () => {
+    console.log("Removing role..");
+    connection.query('SELECT * FROM role', (err, results) => {
+        if (err) throw err;
+        inquirer
+        .prompt([
+            {
+                type: 'list',
+                name: 'role',
+                choices() {
+                    const roleArr = [];
+                    results.forEach(({title}) => {
+                        roleArr.push(title);
+                    })
 
+                    return roleArr;
+                },
+                message: 'Which role would you like to remove?',
+            },
+        ])
+        .then((answer) => {
+            //store the chosen role
+            let chosenRole;
+            //if role exists in DB, store
+            results.forEach((position) => {
+                if(position.title === answer.role) {
+                    chosenRole = answer.role;
+                }
+            })
+
+            console.log(chosenRole)
+            connection.query(
+                'DELETE FROM role WHERE title = ?', chosenRole, (err, data) => {
+                    if (err) throw err;
+                    start();
+                    console.log(`\n ${answer.role} REMOVED...\n`);
+
+                    }
+            )
+        })
+    });
+}
 
 
 // Instantiate the connection
