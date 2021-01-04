@@ -586,100 +586,46 @@ const viewByManager = () => {
 
 
 const viewDeptSpending = () => {
-    console.log("Fetching departments...");
-    let deptChoiceArray = [];
-    // let deptIDArray = [];
-    let rolesArr = [];
-    let instancesOfRolesArr = [];
 
-    //Create connection with promise
+    //Crate connection with promise-sql
     promise.createConnection(connectionInformation).then((conn) => {
-
-        //Query the department names
         return Promise.all([
-            conn.query('SELECT id, dept_name FROM department AS Department'),
-            conn.query("SELECT role.id, role.title, role.salary, role.department_id FROM role"),
-            conn.query("SELECT employee.role_id FROM employee")
-            ]);
+            //Query current salaries paid and departments 
+            conn.query("SELECT department.dept_name AS department, role.salary FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id ORDER BY department ASC"),
+            conn.query('SELECT dept_name FROM department ORDER BY dept_name ASC')
+        ]);
+    }).then(([salaries, departments]) => {
+        console.log(salaries)
+        console.log(departments)
 
-        }).then(([depts, roles, numberOfRoleIDs]) => {
+        let deptArr = [];
+        let dept;
 
-        //Place departments names into an array
-        for (i = 0; i < depts.length; i++){
-            deptChoiceArray.push(depts[i].dept_name)
-        }
-        
-        //Place dept id into an array
-        // for (i = 0; i < depts.length; i++){
-        //     deptIDArray.push(depts[i].id)
-        // }
+        //Loop all departments
+        for(i = 0; i < departments.length; i++) {
+            let spending = 0;
+            console.log[i]
 
-        // store roles in array
-        for (i = 0; i < roles.length; i++){
-            rolesArr.push(roles[i])
-        }
-        
-        // store total instaces of roles in array
-        for (i = 0; i < numberOfRoleIDs.length; i++){
-            instancesOfRolesArr.push(numberOfRoleIDs[i])
-        }
-
-            inquirer.prompt([
-                {
-                    type: 'list',
-                    name: 'department',
-                    choices: deptChoiceArray,
-                    message: 'Which department do you want to view?'
+            //Add salaries together
+            for(j = 0; j < salaries.length; j++){
+                if(departments[i].dept_name == salaries[j].department){
+                    spending += salaries[j].salary;
                 }
-        ]).then((answer) => {
-            console.log(instancesOfRolesArr)
-                //Storing the index of the chosen department
-                let deptChoiceID = deptChoiceArray.indexOf(answer.department);
-                console.log("The index of the chosen array is: " + deptChoiceID)
-                //Using that index on the next array to get the dept_id number
-                let deptID = deptChoiceID + 1;
-                console.log("The department_id is: " + deptID)
+            }
+            //Store department details in object
+            dept = {
+                Department: departments[i].dept_name,
+                Budget: spending
+            }
 
-                let salaryCount = 0;
-            //for loop all role.id
-            //if deptartment_id = choice Dept
-            //store salary as objects in array eg {1: id:1, title:accountant, salary:45000, 2: id:2, title:Sales Rep, salary:5000}
+            deptArr.push(dept);
+        }
+        //Display info in a table
+        console.table(deptArr)
 
-            //loop chosen dept array objects 
-                // loop employee.role_id 
-                    //if  employee.role_id = deptarray[i]
-                    // salaryCount + deptarray[i]
-                
-
-
-
-
-
-                // for(i = 0; i < rolesArr.length; i++){
-                //     console.log(roles[i].salary)
-                //     if(rolesArr[i].department_id == deptID){
-                //         // salaryCount =+ rolesArr[i].salary
-                //         console.log("This is in the department chosen")
-                //         // console.log("The current count is: " + salaryCount)
-                //     }
-                // }
-
-                // console.log(salaryCount)
-
-                console.log("Chosen Department is: " + answer.department)
-
-                // connection.query(query, (err, results) => {
-                //     if (err) throw err;
-
-                //     //display results in a console table
-                //     console.table(results);
-
-                    //Restart main menu
-                    start();
-                })
-            })
-        // }) 
-};
+        start();
+    })
+}
 
 
 const updateRole = () => {
