@@ -57,6 +57,7 @@ const start = () => {
                 'Add role',
                 'Remove employee',
                 'Remove role',
+                'Remove department',
                 'Update employee role',
                 'Update employee manager',
                 //wthis isn't working!
@@ -97,6 +98,9 @@ const start = () => {
                 break; 
             case 'Remove role':
                 deleteRole();
+                break; 
+            case 'Remove department':
+                deleteDepartment();
                 break; 
             case 'Update employee role':
                 updateRole();                
@@ -451,10 +455,11 @@ let addRoleResponseProcessing = (answer) => {
 }
 
 const viewEmployees = () => {
-    //Fetch employees s from employee table
+    //Fetch employees from employee table
     let query =  
     "SELECT employee.id AS ID, employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS 'Title', department.dept_name AS Department, role.salary AS 'Salary', CONCAT(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
     
+    //Table log results
     connection.query(query, (err, results) => {
         if (err) throw err;
         console.table(results);
@@ -499,11 +504,11 @@ const viewByDept = () => {
 const viewByRole = () => {
     let roleChoiceArray = [];
         
-        //Query the department names
+        //Query the roles
         connection.query('SELECT title FROM role', (err, res) => {
             if (err) throw err;
 
-        //Map dept names into an array
+        //Map roles names into an array
         roleChoiceArray = res.map(choice => choice.title);            
 
             inquirer.prompt({
@@ -531,17 +536,15 @@ const viewByRole = () => {
         })
     };
 
-        // )}
-
 const viewByManager = () => {
-    //Global variables for choices arrays
+    //Variables for choices arrays
     let managerNameArr = [];
     let managerIDArr = [];
 
     //Create connection with promise
     promise.createConnection(connectionInformation).then((conn) => {
 
-        //Query the department names
+        //Query the manager names
             return conn.query("SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name, '') AS Employee FROM employee ORDER BY Employee");
 
     }).then((managers) => {
@@ -589,14 +592,14 @@ const viewDeptSpending = () => {
 
     //Crate connection with promise-sql
     promise.createConnection(connectionInformation).then((conn) => {
+
         return Promise.all([
             //Query current salaries paid and departments 
             conn.query("SELECT department.dept_name AS department, role.salary FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id ORDER BY department ASC"),
             conn.query('SELECT dept_name FROM department ORDER BY dept_name ASC')
         ]);
+
     }).then(([salaries, departments]) => {
-        console.log(salaries)
-        console.log(departments)
 
         let deptArr = [];
         let dept;
@@ -604,7 +607,6 @@ const viewDeptSpending = () => {
         //Loop all departments
         for(i = 0; i < departments.length; i++) {
             let spending = 0;
-            console.log[i]
 
             //Add salaries together
             for(j = 0; j < salaries.length; j++){
@@ -630,7 +632,6 @@ const viewDeptSpending = () => {
 
 const updateRole = () => {
 
-    console.log("Fetching employees...");
     //Global variables for choices arrays
     let employeeArr = [];
     let roleArr = [];
@@ -646,8 +647,6 @@ const updateRole = () => {
 
             
     }).then(([roles, employees]) => {
-        console.log(employees);
-         console.log(roles)
         
         //Place employee names into an array
         for (i = 0; i < employees.length; i++){
@@ -711,7 +710,6 @@ const updateRole = () => {
 
 
 const updateManager = () => {
-    console.log("Fetching employees...");
     //Global variables for choices arrays
     let employeeArr = [];
 
@@ -726,7 +724,7 @@ const updateManager = () => {
         for (i = 0; i < employees.length; i++){
             employeeArr.push(employees[i].Employee)
         }
-            // if there is to be no manager:
+            //Option if there is to be no manager:
             employeeArr.unshift('--');
 
             inquirer.prompt([
@@ -747,8 +745,6 @@ const updateManager = () => {
                 }
 
             ]).then((answer) => {
-                console.log(answer.manager);
-                console.log(answer.name);
                 
                 let employeeID;
                 let managerID;
@@ -778,7 +774,6 @@ const updateManager = () => {
       
 
 const deleteEmployee = () => {
-    console.log("Firing employee..");
     connection.query('SELECT * FROM employee', (err, results) => {
         if (err) throw err;
         inquirer
@@ -791,13 +786,7 @@ const deleteEmployee = () => {
                     results.forEach(({first_name}) => {
                         employeeArr.push(first_name);
                     })
-
-                    // if (employeeArr.length === 0){
-                    //     console.log("You need employees before you can fire them");
-                    //     start();
-                    // } else {
                     return employeeArr;
-                    // }
                 },
                 message: 'Which employee would you like to remove?',
             },
@@ -864,6 +853,49 @@ const deleteRole = () => {
     });
 }
 
+const deleteDepartment = () => {
+    connection.query('SELECT * FROM department', (err, results) => {
+        if (err) throw err;
+        inquirer
+        .prompt([
+            {
+                type: 'list',
+                name: 'department',
+                choices() {
+                    const deptArr = [];
+                    results.forEach(({dept_name}) => {
+                        deptArr.push(dept_name);
+                    })
+
+                    return deptArr;
+                },
+                message: 'Which department would you like to remove?',
+            },
+        ])
+        .then((answer) => {
+            console.log(answer.department)
+            console.log(results)
+            //store the chosen role
+            let chosenDept;
+            //if role exists in DB, store
+            results.forEach((dept) => {
+                if(dept.dept_name === answer.department) {
+                    chosenDept = dept.dept_name;
+                }
+            })
+
+            console.log(chosenDept)
+            connection.query(
+                'DELETE FROM department WHERE dept_name = ?', chosenDept, (err, data) => {
+                    if (err) throw err;
+                    start();
+                    console.log(`\n ${answer.deptartment} REMOVED...\n`);
+
+                    }
+            )
+        })
+    });
+}
 
 // Instantiate the connection
 let connectionCallBack = (err) => {
