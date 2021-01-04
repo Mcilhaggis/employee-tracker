@@ -2,16 +2,41 @@ const inquirer = require("inquirer");
 const mysql = require("mysql");
 const table = require("console.table");
 const promise = require("promise-mysql");
+const ascii = require("asciiart-logo");
 
 //Create connection to mySQL database
 const connectionInformation = {
     host: 'localhost',
     port: 3306,
     user: 'root',
+
+
+
+//HIDE PASSWORD, STORE IN ANOTHER FILE ADD FILE TO GITIGNORE 
+
+
+
+
     password: 'Montanawolf94!',
     database: 'employee_DB'
 };
  const connection = mysql.createConnection(connectionInformation);
+
+//Intro screen
+const intro = () => {
+    console.log(
+        ascii({
+        name: 'Employee Tracker',
+        font: 'DOS Rebel',
+        lineChars: 10,
+        orderColor: 'grey',
+        logoColor: 'yellow',
+    })
+    .right('github.com/McIlhaggis')
+    .render()
+    );
+    start();
+}
 
 //Overarching function to start all inquirer promps
 const start = () => {
@@ -24,6 +49,7 @@ const start = () => {
                 'View all employees', 
                 'View employees by department', 
                 'View employees by manager',
+                //if no current roles filled, return the menu throw console log that no spending
                 'View department spending',
                 'Add employee',
                 'Add department',
@@ -32,6 +58,7 @@ const start = () => {
                 'Remove role',
                 'Update employee role',
                 'Update employee manager',
+                //wthis isn't working!
                 'View all roles',
                 'EXIT'
     ]
@@ -390,12 +417,14 @@ const addRoles = () => {
         message: 'What is the salary for this position?'
     }
 
-let addRoleResponseProcessing = (answer) => {    
+let addRoleResponseProcessing = (answer) => {  
+        let chosenDeptID = deptArr.indexOf(answer.dept) + 1;
+    
         connection.query(
             'INSERT INTO role SET ?',
             {
                 title: answer.roles,
-                department_id: deptArr.indexOf(answer.dept),
+                department_id: chosenDeptID,
                 salary: answer.salary
             },
             (err) => {
@@ -514,9 +543,9 @@ const viewByManager = () => {
 const viewDeptSpending = () => {
     console.log("Fetching departments...");
     let deptChoiceArray = [];
-    let deptIDArray = [];
+    // let deptIDArray = [];
     let rolesArr = [];
-    let roleDeptIDArr = [];
+    let instancesOfRolesArr = [];
 
     //Create connection with promise
     promise.createConnection(connectionInformation).then((conn) => {
@@ -524,35 +553,31 @@ const viewDeptSpending = () => {
         //Query the department names
         return Promise.all([
             conn.query('SELECT id, dept_name FROM department AS Department'),
-            conn.query("SELECT role.id, role.title, role.salary, role.department_id FROM role")
+            conn.query("SELECT role.id, role.title, role.salary, role.department_id FROM role"),
+            conn.query("SELECT employee.role_id FROM employee")
             ]);
 
-        }).then(([depts, roles]) => {
-        // console.log(depts)
-        // console.log(roles)
+        }).then(([depts, roles, numberOfRoleIDs]) => {
 
-        //Place names into an array
+        //Place departments names into an array
         for (i = 0; i < depts.length; i++){
             deptChoiceArray.push(depts[i].dept_name)
         }
         
         //Place dept id into an array
-        for (i = 0; i < depts.length; i++){
-            deptIDArray.push(depts[i].id)
-        }
-        //Place role title into an array
-        for (i = 0; i < roles.length; i++){
-            rolesArr.push(roles[i].title)
-        }
-        //Place role id into an array
-        for (i = 0; i < roles.length; i++){
-            roleDeptIDArr.push(roles[i].department_id)
-        }
+        // for (i = 0; i < depts.length; i++){
+        //     deptIDArray.push(depts[i].id)
+        // }
 
-        console.log(deptChoiceArray)
-        console.log(deptIDArray)
-        console.log(rolesArr)
-        console.log(roleDeptIDArr)
+        // store roles in array
+        for (i = 0; i < roles.length; i++){
+            rolesArr.push(roles[i])
+        }
+        
+        // store total instaces of roles in array
+        for (i = 0; i < numberOfRoleIDs.length; i++){
+            instancesOfRolesArr.push(numberOfRoleIDs[i])
+        }
 
             inquirer.prompt([
                 {
@@ -562,9 +587,41 @@ const viewDeptSpending = () => {
                     message: 'Which department do you want to view?'
                 }
         ]).then((answer) => {
+            console.log(instancesOfRolesArr)
+                //Storing the index of the chosen department
+                let deptChoiceID = deptChoiceArray.indexOf(answer.department);
+                console.log("The index of the chosen array is: " + deptChoiceID)
+                //Using that index on the next array to get the dept_id number
+                let deptID = deptChoiceID + 1;
+                console.log("The department_id is: " + deptID)
 
-                console.log(answer)
-                // const query = `SELECT employee.id AS ID, employee.first_name AS 'First Name', employee.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, CONCAT(e.first_name, ' ' , e.last_name) AS Manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id WHERE department.dept_name = '${answer.department}' ORDER BY ID ASC`;
+                let salaryCount = 0;
+            //for loop all role.id
+            //if deptartment_id = choice Dept
+            //store salary as objects in array eg {1: id:1, title:accountant, salary:45000, 2: id:2, title:Sales Rep, salary:5000}
+
+            //loop chosen dept array objects 
+                // loop employee.role_id 
+                    //if  employee.role_id = deptarray[i]
+                    // salaryCount + deptarray[i]
+                
+
+
+
+
+
+                // for(i = 0; i < rolesArr.length; i++){
+                //     console.log(roles[i].salary)
+                //     if(rolesArr[i].department_id == deptID){
+                //         // salaryCount =+ rolesArr[i].salary
+                //         console.log("This is in the department chosen")
+                //         // console.log("The current count is: " + salaryCount)
+                //     }
+                // }
+
+                // console.log(salaryCount)
+
+                console.log("Chosen Department is: " + answer.department)
 
                 // connection.query(query, (err, results) => {
                 //     if (err) throw err;
@@ -820,6 +877,6 @@ const deleteRole = () => {
 // Instantiate the connection
 let connectionCallBack = (err) => {
     if (err) throw err;
-    start();
+    intro();
 };
 connection.connect(connectionCallBack);
