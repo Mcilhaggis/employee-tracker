@@ -241,9 +241,14 @@ let addDepartmentResponseProcessing = (answer) => {
 const addRoles = () => {
     //Array to store departments for options that the role can be assigned to
     const deptArr = [];
+    const deptIDArr = [];
 
     //Get the list of departments that currently exist
     connection.query('SELECT id, dept_name FROM department', (err,res) => {
+
+        res.forEach(({id}) => {
+            deptIDArr.push(id);
+        })
 
     let ar1 = {
         type: 'input',
@@ -271,15 +276,16 @@ const addRoles = () => {
     }
 
 let addRoleResponseProcessing = (answer) => { 
-    //Store the ID of the department this role is in to assign to it 
-        let chosenDeptID = deptArr.indexOf(answer.dept) + 1;
+    //Store the index of the chosen dept
+        let chosenDeptIndex = deptArr.indexOf(answer.dept);
+        let deptID = deptIDArr[chosenDeptIndex]
     
         //Insert role into role table
         connection.query(
             'INSERT INTO role SET ?',
             {
                 title: answer.roles,
-                department_id: chosenDeptID,
+                department_id: deptID,
                 salary: answer.salary
             },
             (err) => {
