@@ -3,21 +3,14 @@ const mysql = require("mysql");
 const table = require("console.table");
 const promise = require("promise-mysql");
 const ascii = require("asciiart-logo");
+const password = require("./password.js")
 
 //Create connection to mySQL database
 const connectionInformation = {
     host: 'localhost',
     port: 3306,
     user: 'root',
-
-
-
-//HIDE PASSWORD, STORE IN ANOTHER FILE ADD FILE TO GITIGNORE 
-
-
-
-
-    password: 'Montanawolf94!',
+    password: password,
     database: 'employee_DB'
 };
  const connection = mysql.createConnection(connectionInformation);
@@ -883,7 +876,6 @@ const deleteDepartment = () => {
                     chosenDept = dept.dept_name;
                 }
             })
-
             console.log(chosenDept)
             connection.query(
                 'DELETE FROM department WHERE dept_name = ?', chosenDept, (err, data) => {
