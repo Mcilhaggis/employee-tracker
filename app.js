@@ -10,6 +10,7 @@ const connectionInformation = {
     host: 'localhost',
     port: 3306,
     user: 'root',
+    //Password stored in seperate js file and added to git ignore
     password: password,
     database: 'employee_DB'
 };
@@ -41,9 +42,7 @@ const start = () => {
                 'View all employees', 
                 'View employees by department', 
                 'View employees by manager',
-                //not running after selection of item#
                 'View employees by role',
-                //if no current roles filled, return the menu throw console log that no spending
                 'View department spending',
                 'Add employee',
                 'Add department',
@@ -53,8 +52,6 @@ const start = () => {
                 'Remove department',
                 'Update employee role',
                 'Update employee manager',
-                //wthis isn't working!
-                'View all roles',
                 'EXIT'
     ]
     };
@@ -63,7 +60,7 @@ const start = () => {
     let firstResponse = (answer) => {
         switch (answer.action) {
             case 'View all employees':
-            viewEmployees();
+                viewEmployees();
                 break;
             case 'View employees by department':
                 viewByDept();
@@ -208,12 +205,14 @@ const addEmployees = () => {
 
 const addDepartments = () => {
 
+//Request the name of the new department
         let ad1 = {
             type: 'input',
             name: 'department',
             message: 'What is the new department?'
         }
 
+//Store the new department in the table 
     let addDepartmentResponseProcessing = (answer) => {    
             connection.query(
                 'INSERT INTO department SET ?',
@@ -234,11 +233,14 @@ const addRoles = () => {
     const deptArr = [];
     connection.query('SELECT dept_name FROM department', (err,res) => {
 
+    //Ask the title of the new role
     let ar1 = {
         type: 'input',
         name: 'roles',
         message: 'What is the new role?'
     }
+
+    //Offer list of avai departments for it to go into
     let ar2 = {
         type: 'list',
         name: 'dept',
@@ -251,7 +253,7 @@ const addRoles = () => {
         },
         message: 'Which department is this role in?'
     }
-
+    //Ask salary amount for the role
     let ar3 = {
         type: 'input',
         name: 'salary',
@@ -260,6 +262,7 @@ const addRoles = () => {
 
 let addRoleResponseProcessing = (answer) => {    
         connection.query(
+            //Insert role into talble
             'INSERT INTO role SET ?',
             {
                 title: answer.roles,
@@ -279,12 +282,12 @@ let addRoleResponseProcessing = (answer) => {
 
 const viewEmployees = () => {
     console.log("Fetching employees...");
-
-    //this is displaying themselves as their own manager
+//Get the available employees and corresponding info
     let query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.dept_name AS Department, role.salary, CONCAT(employee.first_name, ' ' ,  employee.last_name) AS manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
     
     connection.query(query, (err, results) => {
         if (err) throw err;
+        //Display results in a table
         console.table(results);
         console.log('--------------------')
         start();
@@ -393,7 +396,7 @@ let addDepartmentResponseProcessing = (answer) => {
 }
 
 const addRoles = () => {
-    //Array to store departments
+    //Array to store departments for options that the role can be assigned to
     const deptArr = [];
 
     //Get the list of departments that currently exist
@@ -408,7 +411,7 @@ const addRoles = () => {
         type: 'list',
         name: 'dept',
         choices() {
-            //Store current departments in the array
+            //Store current departments in the array and siaply to user 
                 if (err) throw err;
                 res.forEach(({dept_name}) => {
                     deptArr.push(dept_name);
@@ -709,7 +712,7 @@ const updateManager = () => {
     //Create connection with promise
     promise.createConnection(connectionInformation).then((conn) => {
 
-        //Query the department names
+        //Query the employee names
             return conn.query("SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name) AS Employee FROM employee ORDER BY Employee");
 
     }).then((employees) => {
@@ -835,6 +838,7 @@ const deleteRole = () => {
 
             console.log(chosenRole)
             connection.query(
+                //Remove the role from the DB
                 'DELETE FROM role WHERE title = ?', chosenRole, (err, data) => {
                     if (err) throw err;
                     start();
@@ -868,9 +872,9 @@ const deleteDepartment = () => {
         .then((answer) => {
             console.log(answer.department)
             console.log(results)
-            //store the chosen role
+            //store the dept role
             let chosenDept;
-            //if role exists in DB, store
+            //if dept exists in DB, store
             results.forEach((dept) => {
                 if(dept.dept_name === answer.department) {
                     chosenDept = dept.dept_name;
