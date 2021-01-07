@@ -115,6 +115,7 @@ const addEmployees = () => {
     console.log("Fetching departments...");
     //Variables for choices arrays
     let rolesArr = [];
+    let rolesIDArr = [];
     let managersArr = [];
     let managerIDArr = [];
 
@@ -142,7 +143,11 @@ const addEmployees = () => {
                 for (i = 0; i < managers.length; i++){
                     managerIDArr.push(managers[i].id)
                 }
-
+                        //Place role ID into an array
+                        for (i = 0; i < roles.length; i++){
+                            rolesIDArr.push(roles[i].id)
+                        }
+                
                 return Promise.all([roles, managers]);
                 }).then(([roles, managers]) => {
 
@@ -179,11 +184,16 @@ const addEmployees = () => {
 
                     ]).then((answer) => {
 
+
                         //Store index of chosen manager
                         let managerNameIndex = managersArr.indexOf(answer.manager) - 1;
-
                         //Get the chosen managers id
                         let managerIDIndex = managerIDArr[managerNameIndex];
+                        //Store index of role
+                        let rolesTitleIndex = rolesArr.indexOf(answer.role);
+                        //Store ID of role
+                        let roleID = rolesIDArr[rolesTitleIndex]
+
 
                         connection.query(
                             //Insert into table
@@ -191,7 +201,7 @@ const addEmployees = () => {
                             {
                                 first_name: answer.firstName,
                                 last_name: answer.lastName,
-                                role_id: rolesArr.indexOf(answer.role) + 1,
+                                role_id: roleID,
                                 manager_id: managerIDIndex 
                             },
                             (err) => {
@@ -870,8 +880,6 @@ const deleteDepartment = () => {
             },
         ])
         .then((answer) => {
-            console.log(answer.department)
-            console.log(results)
             //store the dept role
             let chosenDept;
             //if dept exists in DB, store
@@ -880,7 +888,6 @@ const deleteDepartment = () => {
                     chosenDept = dept.dept_name;
                 }
             })
-            console.log(chosenDept)
             connection.query(
                 'DELETE FROM department WHERE dept_name = ?', chosenDept, (err, data) => {
                     if (err) throw err;
