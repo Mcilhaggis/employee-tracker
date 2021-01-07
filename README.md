@@ -1,8 +1,8 @@
 # Employee-Tracker
 
-![License](https://img.shields.io/github/license/mcilhaggis/responsive-portfolio)
+![License](https://img.shields.io/github/license/mcilhaggis/employee-tracker)
 
-![GitHub repo size](https://img.shields.io/github/repo-size/mcilhaggis/responsive-portfolio)
+![GitHub repo size](https://img.shields.io/github/repo-size/mcilhaggis/employee-tracker)
 
 ## Project Description
 
