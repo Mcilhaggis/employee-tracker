@@ -109,8 +109,6 @@ const start = () => {
     inquirer.prompt(firstQuestion).then(firstResponse);
 }
 
-
-
 const addEmployees = () => {
     console.log("Fetching departments...");
     //Variables for choices arrays
@@ -212,171 +210,7 @@ const addEmployees = () => {
                         );
                     });
 })
-
-const addDepartments = () => {
-
-//Request the name of the new department
-        let ad1 = {
-            type: 'input',
-            name: 'department',
-            message: 'What is the new department?'
-        }
-
-//Store the new department in the table 
-    let addDepartmentResponseProcessing = (answer) => {    
-            connection.query(
-                'INSERT INTO department SET ?',
-                {
-                    dept_name: answer.department,
-                },
-                (err) => {
-                    if (err) throw err;
-                    console.log("Department added successfuly!");
-                    start();
-                }
-            );
-        };
-        inquirer.prompt([ad1]).then(addDepartmentResponseProcessing);
 }
-
-const addRoles = () => {
-    const deptArr = [];
-    connection.query('SELECT dept_name FROM department', (err,res) => {
-
-    //Ask the title of the new role
-    let ar1 = {
-        type: 'input',
-        name: 'roles',
-        message: 'What is the new role?'
-    }
-
-    //Offer list of avai departments for it to go into
-    let ar2 = {
-        type: 'list',
-        name: 'dept',
-        choices() {
-                if (err) throw err;
-                res.forEach(({dept_name}) => {
-                    deptArr.push(dept_name);
-                })
-            return deptArr;
-        },
-        message: 'Which department is this role in?'
-    }
-    //Ask salary amount for the role
-    let ar3 = {
-        type: 'input',
-        name: 'salary',
-        message: 'What is the salary for this position?'
-    }
-
-let addRoleResponseProcessing = (answer) => {    
-        connection.query(
-            //Insert role into talble
-            'INSERT INTO role SET ?',
-            {
-                title: answer.roles,
-                department_id: deptArr.indexOf(answer.dept),
-                salary: answer.salary
-            },
-            (err) => {
-                if (err) throw err;
-                console.log("Role added successfuly!");
-                start();
-            }
-        );
-    };
-    inquirer.prompt([ar1, ar2, ar3]).then(addRoleResponseProcessing);
-  })
-}
-
-const viewEmployees = () => {
-    console.log("Fetching employees...");
-//Get the available employees and corresponding info
-    let query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.dept_name AS Department, role.salary, CONCAT(employee.first_name, ' ' ,  employee.last_name) AS manager FROM employee LEFT JOIN employee e ON e.id = employee.manager_id LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY ID ASC";
-    
-    connection.query(query, (err, results) => {
-        if (err) throw err;
-        //Display results in a table
-        console.table(results);
-        console.log('--------------------')
-        start();
-    })   
-};
-
-const viewByDept = () => {
-    console.log("Fetching departments...");
-    let deptChoiceArray = [];
-
-    //Create connection with promise
-    promise.createConnection(connectionInformation).then((conn) => {
-
-        //Query the department names
-        return conn.query('SELECT dept_name FROM department');
-    }).then(function(results){
-        //Place dept names into an array
-            deptChoiceArray = results.map(choice => choice.dept_name);
-        }).then(() => {
-            inquirer.prompt({
-                type: 'list',
-                name: 'department',
-                choices: deptChoiceArray,
-                message: 'Which department do you want to view?'
-            }).then((answer) => {
-                const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, concat(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = e.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.dept_name = '${answer.department}' ORDER BY ID ASC`;
-
-                connection.query(query, (err, results) => {
-                    if (err) throw err;
-
-                    //display results in a console table
-                    console.table(results);
-
-                    //Restart main menu
-                    start();
-                })
-            })
-        })
-    
-   
-};
-
-const viewByManager = () => {
-    console.log("Fetching departments...");
-    let deptChoiceArray = [];
-
-    //Create connection with promise
-    promise.createConnection(connectionInformation).then((conn) => {
-
-        //Query the department names
-        return conn.query('SELECT d FROM department');
-    }).then(function(results){
-        //Place dept names into an array
-            deptChoiceArray = results.map(choice => choice.dept_name);
-        }).then(() => {
-            inquirer.prompt({
-                type: 'list',
-                name: 'department',
-                choices: deptChoiceArray,
-                message: 'Which department do you want to view?'
-            }).then((answer) => {
-                const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.dept_name AS Department, role.salary AS Salary, concat(e.first_name, ' ' ,  e.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = e.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.dept_name = '${answer.department}' ORDER BY ID ASC`;
-
-                connection.query(query, (err, results) => {
-                    if (err) throw err;
-
-                    //display results in a console table
-                    console.table(results);
-
-                    //Restart main menu
-                    start();
-                })
-            })
-        })
-    
-   
-};
-}
-
 const addDepartments = () => {
 
     //Storing question in a variable to cal later
@@ -404,13 +238,12 @@ let addDepartmentResponseProcessing = (answer) => {
     //Call on question and answer processing
     inquirer.prompt([ad1]).then(addDepartmentResponseProcessing);
 }
-
 const addRoles = () => {
     //Array to store departments for options that the role can be assigned to
     const deptArr = [];
 
     //Get the list of departments that currently exist
-    connection.query('SELECT dept_name FROM department', (err,res) => {
+    connection.query('SELECT id, dept_name FROM department', (err,res) => {
 
     let ar1 = {
         type: 'input',
@@ -459,7 +292,6 @@ let addRoleResponseProcessing = (answer) => {
     inquirer.prompt([ar1, ar2, ar3]).then(addRoleResponseProcessing);
   })
 }
-
 const viewEmployees = () => {
     //Fetch employees from employee table
     let query =  
@@ -473,7 +305,6 @@ const viewEmployees = () => {
         start();
     })   
 };
-
 const viewByDept = () => {
     let deptChoiceArray = [];
 
@@ -506,7 +337,6 @@ const viewByDept = () => {
             })
         })
 };
-
 const viewByRole = () => {
     let roleChoiceArray = [];
         
@@ -541,7 +371,6 @@ const viewByRole = () => {
             })
         })
     };
-
 const viewByManager = () => {
     //Variables for choices arrays
     let managerNameArr = [];
@@ -592,8 +421,6 @@ const viewByManager = () => {
     
     
 };
-
-
 const viewDeptSpending = () => {
 
     //Crate connection with promise-sql
@@ -634,8 +461,6 @@ const viewDeptSpending = () => {
         start();
     })
 }
-
-
 const updateRole = () => {
 
     //Global variables for choices arrays
@@ -713,8 +538,6 @@ const updateRole = () => {
             })
         })  
 };
-
-
 const updateManager = () => {
     //Global variables for choices arrays
     let employeeArr = [];
@@ -777,8 +600,6 @@ const updateManager = () => {
             })
         })
     }
-      
-
 const deleteEmployee = () => {
     connection.query('SELECT * FROM employee', (err, results) => {
         if (err) throw err;
@@ -815,7 +636,6 @@ const deleteEmployee = () => {
         })
     });
 }
-
 const deleteRole = () => {
     console.log("Removing role..");
     connection.query('SELECT * FROM role', (err, results) => {
@@ -859,7 +679,6 @@ const deleteRole = () => {
         })
     });
 }
-
 const deleteDepartment = () => {
     connection.query('SELECT * FROM department', (err, results) => {
         if (err) throw err;
