@@ -278,7 +278,7 @@ const addRoles = () => {
 let addRoleResponseProcessing = (answer) => { 
     //Store the index of the chosen dept
         let chosenDeptIndex = deptArr.indexOf(answer.dept);
-        let deptID = deptIDArr[chosenDeptIndex]
+        let deptID = deptIDArr[chosenDeptIndex];
     
         //Insert role into role table
         connection.query(
@@ -306,6 +306,8 @@ const viewEmployees = () => {
     //Table log results
     connection.query(query, (err, results) => {
         if (err) throw err;
+        console.log(`\n You are now viewing all employees...\n`);
+        console.log('--------------------')
         console.table(results);
         console.log('--------------------')
         start();
@@ -335,6 +337,8 @@ const viewByDept = () => {
                     if (err) throw err;
 
                     //display results in a console table
+                    console.log(`\n You are now viewing all employees in ${answer.department}...\n`);
+
                     console.table(results);
 
                     //Restart main menu
@@ -366,9 +370,7 @@ const viewByRole = () => {
                     if (err) throw err;
     
                     //Display results in a console table
-                    console.log("--------------------")
-                    console.log(`You are now viewing all employees with the role ${answer.role}`)
-                    console.log("--------------------")
+                    console.log(`\n You are now viewing all employees with the role ${answer.role}...\n`);
                     console.table(results);
     
                     //Restart main menu
@@ -417,6 +419,8 @@ const viewByManager = () => {
                         if (err) throw err;
 
                         //display results in a console table
+                        console.log(`\n VIEWING ${answer.manager}'S EMPLOYEES...\n`);
+
                         console.table(results);
 
                         //Restart main menu
@@ -462,6 +466,8 @@ const viewDeptSpending = () => {
             deptArr.push(dept);
         }
         //Display info in a table
+        console.log(`\n VIEWING ALL DEPARTMENTS SPENDING...\n`);
+
         console.table(deptArr)
 
         start();
@@ -535,7 +541,7 @@ const updateRole = () => {
                 // update the employee with the manager ID
                 connection.query(`UPDATE employee SET role_id = ${roleID} WHERE id = ${employeeID}`, (err, res) => {
                     if(err) throw err;
-                    console.log(`\n ${answer.name} ROLE UPDATED TO ${answer.role}...\n`);
+                    console.log(`\n ${answer.employee} ROLE UPDATED TO ${answer.role}...\n`);
                 
                 
                         // Restart main menu
@@ -636,6 +642,8 @@ const deleteEmployee = () => {
             connection.query(
                 'DELETE FROM employee WHERE id = ?', chosenEmployee, (err, data) => {
                     if (err) throw err;
+                    console.log(`\n ${answer.employee} REMOVED...\n`);
+
                     start();
                     }
             )
@@ -679,7 +687,7 @@ const deleteRole = () => {
                     if (err) throw err;
                     start();
                     console.log(`\n ${answer.role} REMOVED...\n`);
-
+                    start();
                     }
             )
         })
@@ -717,7 +725,7 @@ const deleteDepartment = () => {
                 'DELETE FROM department WHERE dept_name = ?', chosenDept, (err, data) => {
                     if (err) throw err;
                     start();
-                    console.log(`\n ${answer.deptartment} REMOVED...\n`);
+                    console.log(`\n ${answer.department} REMOVED...\n`);
 
                     }
             )
