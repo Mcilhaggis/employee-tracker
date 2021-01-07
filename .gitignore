@@ -1,1 +1,4 @@
+# Ignore node modules
 node_modules
+# Ignore password file 
+password.js
